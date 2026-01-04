@@ -12,11 +12,23 @@ class LLMClient:
             api_key=self.api_key,
         )
 
-    def chat(self, messages, temperature=0.7, max_tokens=260) -> str:
-        resp = self.client.chat.completions.create(
-            model=self.model,
-            messages=messages,
-            temperature=float(temperature),
-            max_tokens=int(max_tokens),
-        )
+    def chat(self, messages, temperature=0.7, max_tokens=260, character=None) -> str:
+        request_messages = list(messages)
+        metadata = None
+        if isinstance(character, dict):
+            metadata = {
+                "player": character.get("name"),
+                "color": character.get("color"),
+            }
+
+        completion_kwargs = {
+            "model": self.model,
+            "messages": request_messages,
+            "temperature": float(temperature),
+            "max_tokens": int(max_tokens),
+        }
+        if metadata:
+            completion_kwargs["metadata"] = metadata
+
+        resp = self.client.chat.completions.create(**completion_kwargs)
         return resp.choices[0].message.content
