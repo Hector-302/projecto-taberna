@@ -88,13 +88,45 @@ def clamp_in_world(user_text: str) -> bool:
 
 
 def parse_llm_output(raw: str) -> tuple[str, str]:
+    def _extract_json_field(obj: dict, candidates: list[str]) -> str:
+        lowered = {k.lower(): k for k in obj}
+        for candidate in candidates:
+            key = lowered.get(candidate)
+            if key is None:
+                continue
+            value = obj.get(key)
+            if isinstance(value, str):
+                return value.strip()
+        return ""
+
     text = (raw or "").strip()
     if not text:
         return "", ""
 
     try:
         obj = json.loads(text)
-        return (obj.get("narration") or "").strip(), (obj.get("dialogue") or "").strip()
+        if isinstance(obj, dict):
+            narration = _extract_json_field(obj, ["narration", "narrador", "narracion", "narrative"])
+            dialogue = _extract_json_field(
+                obj,
+                [
+                    "dialogue",
+                    "dialogo",
+                    "sable",
+                    "maela",
+                    "npc",
+                    "respuesta",
+                    "line",
+                ],
+            )
+
+            if not dialogue:
+                for value in obj.values():
+                    if isinstance(value, str) and value.strip() and value.strip() != narration:
+                        dialogue = value.strip()
+                        break
+
+            return narration, dialogue
     except Exception:
         pass
 
@@ -402,8 +434,8 @@ class ChatUI(tk.Tk):
 
                     npc_color = NPCS.get(npc_key, {}).get("color", "")
                     if narration:
-                        self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True)
-                    self._append(npc_name, dialogue, color=npc_color)
+                        self._append("Narrador", f"Narrador: {narration}", color=NEUTRAL_COLOR, italic=True)
+                    self._append(npc_name, f"{npc_name}: {dialogue}", color=npc_color, italic=True)
 
                     self._set_busy(False)
 
@@ -458,8 +490,8 @@ class ChatUI(tk.Tk):
             reply = hard_redirect_reply(npc_key, player_name)
 
             # Narrador + PNJ
-            self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True)
-            self._append(npc_name, reply, color=npc_color)
+            self._append("Narrador", f"Narrador: {narration}", color=NEUTRAL_COLOR, italic=True)
+            self._append(npc_name, f"{npc_name}: {reply}", color=npc_color, italic=True)
 
             # Guardamos SOLO el dialogo del PNJ (no la narracion)
             self.session.add_assistant(npc_key, reply, character_key=character_key)
