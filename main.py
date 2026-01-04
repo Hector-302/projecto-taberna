@@ -13,14 +13,15 @@ from session import Session
 
 # IMPORTANTE: Las claves deben coincidir con NPC_PROMPTS
 NPCS = {
-    "Maela (tabernera)": {"name": "Maela"},
-    "Sable (aventurero)": {"name": "Sable"},
+    "Maela (tabernera)": {"name": "Maela", "color": "#f59e0b", "avatar": "🍷"},
+    "Sable (aventurero)": {"name": "Sable", "color": "#22d3ee", "avatar": "🧭"},
 }
 
 CHARACTERS = {
     "Darian (explorador)": {
         "name": "Darian",
         "color": "#1f6feb",
+        "avatar": "🧭",
         "rules": (
             "Rol del jugador: Darian, explorador novato de frontera que habla en primera persona. "
             "Tono curioso y respetuoso; usa frases breves y directas sin tecnicismos modernos."
@@ -29,12 +30,17 @@ CHARACTERS = {
     "Kaela (mercenaria)": {
         "name": "Kaela",
         "color": "#b54a8a",
+        "avatar": "🗡️",
         "rules": (
             "Rol del jugador: Kaela, mercenaria pragmatica que evita exageraciones. "
             "Habla en primera persona, tono firme pero cortes, sin romper el marco de taberna."
         ),
     },
 }
+
+NEUTRAL_COLOR = "#9ca3af"
+CHAT_BG = "#0d1117"
+CHAT_FG = "#e5e7eb"
 
 
 def split_user_message(text: str):
@@ -137,7 +143,7 @@ class ChatUI(tk.Tk):
         mid.rowconfigure(0, weight=1)
         mid.columnconfigure(0, weight=1)
 
-        self.chat = tk.Text(mid, wrap="word", state="disabled")
+        self.chat = tk.Text(mid, wrap="word", state="disabled", bg=CHAT_BG, fg=CHAT_FG, insertbackground=CHAT_FG)
         self.chat.grid(row=0, column=0, sticky="nsew")
 
         scroll = ttk.Scrollbar(mid, command=self.chat.yview)
@@ -155,6 +161,7 @@ class ChatUI(tk.Tk):
         self.send_btn = ttk.Button(bottom, text="Enviar", command=self.on_send)
         self.send_btn.grid(row=0, column=1, padx=(10, 0))
 
+        self.msg_counter = 1
         self._boot_intro()
 
         # Arranca el polling de resultados del hilo
@@ -177,16 +184,33 @@ class ChatUI(tk.Tk):
             return
         self.character_var.set(choice)
 
-    def _append(self, speaker: str, text: str, *, color: str = ""):
+    def _avatar_for(self, name: str, meta: dict | None = None) -> str:
+        if meta and meta.get("avatar"):
+            return meta["avatar"]
+        return name[:1].upper() if name else "?"
+
+    def _append(self, speaker: str, text: str, *, color: str = "", italic: bool = False, avatar: str | None = None):
+        fg = color or NEUTRAL_COLOR
         self.chat.configure(state="normal")
-        tag = ""
-        if color:
-            safe_color = color.replace("#", "")
-            tag = f"fg-{safe_color}"
-            if tag not in self.chat.tag_names():
-                self.chat.tag_configure(tag, foreground=color)
-        self.chat.insert("end", f"{speaker}:\n", tag)
-        self.chat.insert("end", f"{text}\n\n")
+        safe_color = fg.replace("#", "") or "neutral"
+        label_tag = f"label-{safe_color}"
+        body_tag = f"body-{safe_color}{'-italic' if italic else ''}"
+
+        if label_tag not in self.chat.tag_names():
+            self.chat.tag_configure(label_tag, foreground=fg, font=("TkDefaultFont", 10, "bold"), background=CHAT_BG)
+        if body_tag not in self.chat.tag_names():
+            font_style = ("TkDefaultFont", 10, "italic") if italic else ("TkDefaultFont", 10)
+            self.chat.tag_configure(body_tag, foreground=fg, font=font_style, background=CHAT_BG)
+
+        ts = time.strftime("%H:%M:%S")
+        order = self.msg_counter
+        self.msg_counter += 1
+        avatar_txt = f"[{avatar}]" if avatar else ""
+        label = f"[{order:02d} | {ts}] {avatar_txt} {speaker}:".strip()
+
+        self.chat.configure(state="normal")
+        self.chat.insert("end", f"{label}\n", label_tag)
+        self.chat.insert("end", f"{text}\n\n", body_tag)
         self.chat.configure(state="disabled")
         self.chat.see("end")
 
@@ -195,7 +219,10 @@ class ChatUI(tk.Tk):
             "Narrador",
             f"Entras en {TAVERN_NAME}. Huele a madera humeda, guiso y lana mojada.\n"
             "A la barra, Maela limpia vasos. En una mesa lateral, Sable observa en silencio.\n"
-            f"Tu nombre es {self._player_name()}. Elige con quien hablar y escribe tu primera frase."
+            f"Tu nombre es {self._player_name()}. Elige con quien hablar y escribe tu primera frase.",
+            color=NEUTRAL_COLOR,
+            italic=True,
+            avatar="◆",
         )
 
     def on_new_game(self):
@@ -321,15 +348,18 @@ class ChatUI(tk.Tk):
                     # la narracion es cosmetica y no debe contaminar memoria.
                     self.session.add_assistant(npc_key, dialogue, character_key=character_key)
 
+                    npc_color = NPCS.get(npc_key, {}).get("color", "")
+                    npc_avatar = NPCS.get(npc_key, {}).get("avatar")
+
                     if narration:
-                        self._append("Narrador", f"*{narration}*")
-                    self._append(npc_name, dialogue)
+                        self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True, avatar="◆")
+                    self._append(npc_name, dialogue, color=npc_color, avatar=npc_avatar)
 
                     self._set_busy(False)
 
                 else:
                     _, npc_key, character_key, err = item
-                    self._append("Sistema", f"Error al llamar al LLM: {err}")
+                    self._append("Sistema", f"Error al llamar al LLM: {err}", color="#ef4444", avatar="⚠️")
                     self._set_busy(False)
 
         except queue.Empty:
@@ -362,22 +392,26 @@ class ChatUI(tk.Tk):
 
         for segment in segments:
             speaker = "Narrador" if segment["role"] == "narrator" else player_name
-            color = "" if segment["role"] == "narrator" else self._player_color()
-            self._append(speaker, segment["text"], color=color)
+            color = NEUTRAL_COLOR if segment["role"] == "narrator" else self._player_color()
+            avatar = "◆" if segment["role"] == "narrator" else self._avatar_for(player_name, character_meta)
+            self._append(speaker, segment["text"], color=color, italic=segment["role"] == "narrator", avatar=avatar)
 
             history_role = "system" if segment["role"] == "narrator" else "user"
             self.session.add_user(npc_key, segment["text"], character_key=character_key, role=history_role)
 
-        # Si intenta romper marco, respondemos local y formateamos narrador con asteriscos
+        # Si intenta romper marco, respondemos local con narrador y PNJ controlados
         if clamp_in_world(user_text):
-            narration = "*Maela baja la voz y el murmullo de la sala tapa el resto.*" if npc_name == "Maela" \
-                else "*Sable te mira un segundo, como midiendo si merece la pena seguir.*"
+            npc_meta = NPCS.get(npc_key, {})
+            npc_color = npc_meta.get("color", "")
+            npc_avatar = npc_meta.get("avatar")
+            narration = "Maela baja la voz y el murmullo de la sala tapa el resto." if npc_name == "Maela" \
+                else "Sable te mira un segundo, como midiendo si merece la pena seguir."
 
             reply = hard_redirect_reply(npc_key, player_name)
 
             # Narrador + PNJ
-            self._append("Narrador", narration)
-            self._append(npc_name, reply)
+            self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True, avatar="◆")
+            self._append(npc_name, reply, color=npc_color, avatar=npc_avatar)
 
             # Guardamos SOLO el dialogo del PNJ (no la narracion)
             self.session.add_assistant(npc_key, reply, character_key=character_key)
