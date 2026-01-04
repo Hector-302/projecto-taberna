@@ -37,8 +37,8 @@ class Session:
             self.histories[key] = deque(maxlen=self.max_turns * 2)
         return self.histories[key]
 
-    def add_user(self, npc_key: str, text: str, character_key: Optional[str] = None):
-        self.history_for(npc_key, character_key).append({"role": "user", "content": text})
+    def add_user(self, npc_key: str, text: str, character_key: Optional[str] = None, *, role: str = "user"):
+        self.history_for(npc_key, character_key).append({"role": role, "content": text})
 
     def add_assistant(self, npc_key: str, text: str, character_key: Optional[str] = None):
         self.history_for(npc_key, character_key).append({"role": "assistant", "content": text})

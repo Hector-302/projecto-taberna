@@ -37,6 +37,34 @@ CHARACTERS = {
 }
 
 
+def split_user_message(text: str):
+    """Separar mensaje en segmentos de narrador/personaje respetando escapes \\*."""
+    segments = []
+    buffer = []
+    role = "character"
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch == "\\" and i + 1 < len(text) and text[i + 1] == "*":
+            buffer.append("*")
+            i += 2
+            continue
+        if ch == "*":
+            if buffer:
+                segments.append({"role": role, "text": "".join(buffer)})
+                buffer = []
+            role = "narrator" if role == "character" else "character"
+            i += 1
+            continue
+        buffer.append(ch)
+        i += 1
+
+    if buffer:
+        segments.append({"role": role, "text": "".join(buffer)})
+
+    return segments
+
+
 def clamp_in_world(user_text: str) -> bool:
     t = user_text.lower()
     triggers = [
@@ -196,7 +224,7 @@ class ChatUI(tk.Tk):
             self.status_var.set(f"Sesion {self.started_at} - {TAVERN_NAME}")
             self.entry.focus_set()
 
-    def _ask_llm_async(self, npc_key: str, user_text: str, character_key: str, character_meta: dict):
+    def _ask_llm_async(self, npc_key: str, character_key: str, character_meta: dict):
         def worker():
             try:
                 player_name = character_meta.get("name") or "Jugador"
@@ -224,7 +252,6 @@ class ChatUI(tk.Tk):
                     {"role": "system", "content": npc_prompt},
                 ])
                 messages += self.session.get_messages(npc_key, character_key)
-                messages.append({"role": "user", "content": user_text})
 
                 raw = self.llm.chat(messages, temperature=0.45, max_tokens=220, character=character_meta)
                 raw = (raw or "").strip()
@@ -329,11 +356,17 @@ class ChatUI(tk.Tk):
         character_meta = self.session.get_active_character() or {}
         player_name = character_meta.get("name") or "Jugador"
 
-        # Mensaje del jugador: una sola vez
-        self._append(player_name, user_text, color=self._player_color())
+        segments = split_user_message(user_text)
+        if not segments:
+            return
 
-        # Guardamos el turno del jugador siempre (asi hay continuidad)
-        self.session.add_user(npc_key, user_text, character_key=character_key)
+        for segment in segments:
+            speaker = "Narrador" if segment["role"] == "narrator" else player_name
+            color = "" if segment["role"] == "narrator" else self._player_color()
+            self._append(speaker, segment["text"], color=color)
+
+            history_role = "system" if segment["role"] == "narrator" else "user"
+            self.session.add_user(npc_key, segment["text"], character_key=character_key, role=history_role)
 
         # Si intenta romper marco, respondemos local y formateamos narrador con asteriscos
         if clamp_in_world(user_text):
@@ -352,7 +385,7 @@ class ChatUI(tk.Tk):
 
         # Flujo normal con LLM (la respuesta vendra como narration/dialogue via _poll_results)
         self._set_busy(True)
-        self._ask_llm_async(npc_key, user_text, character_key, character_meta)
+        self._ask_llm_async(npc_key, character_key, character_meta)
 
 if __name__ == "__main__":
     app = ChatUI()
