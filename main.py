@@ -1,6 +1,7 @@
 import json
 import logging
 import queue
+import re
 import threading
 import time
 import tkinter as tk
@@ -21,15 +22,14 @@ from session import Session
 
 # IMPORTANTE: Las claves deben coincidir con NPC_PROMPTS
 NPCS = {
-    "Maela (tabernera)": {"name": "Maela", "color": "#f59e0b", "avatar": "🍷"},
-    "Sable (aventurero)": {"name": "Sable", "color": "#22d3ee", "avatar": "🧭"},
+    "Maela (tabernera)": {"name": "Maela", "color": "#f59e0b"},
+    "Sable (aventurero)": {"name": "Sable", "color": "#22d3ee"},
 }
 
 CHARACTERS = {
     "Darian (explorador)": {
         "name": "Darian",
         "color": "#1f6feb",
-        "avatar": "🧭",
         "rules": (
             "Rol del jugador: Darian, explorador novato de frontera que habla en primera persona. "
             "Tono curioso y respetuoso; usa frases breves y directas sin tecnicismos modernos."
@@ -38,7 +38,6 @@ CHARACTERS = {
     "Kaela (mercenaria)": {
         "name": "Kaela",
         "color": "#b54a8a",
-        "avatar": "🗡️",
         "rules": (
             "Rol del jugador: Kaela, mercenaria pragmatica que evita exageraciones. "
             "Habla en primera persona, tono firme pero cortes, sin romper el marco de taberna."
@@ -86,6 +85,31 @@ def clamp_in_world(user_text: str) -> bool:
         "sal de la taberna", "teletransport", "internet", "gpu", "debug"
     ]
     return any(x in t for x in triggers)
+
+
+def parse_llm_output(raw: str) -> tuple[str, str]:
+    text = (raw or "").strip()
+    if not text:
+        return "", ""
+
+    try:
+        obj = json.loads(text)
+        return (obj.get("narration") or "").strip(), (obj.get("dialogue") or "").strip()
+    except Exception:
+        pass
+
+    section_pattern = re.compile(r"#+\s*(narration|dialogue)\s*:?(.*?)(?=#+\s*\w|\Z)", re.IGNORECASE | re.DOTALL)
+    sections = {match.group(1).lower(): match.group(2).strip().strip("# ") for match in section_pattern.finditer(text)}
+    if sections:
+        return sections.get("narration", ""), sections.get("dialogue", "")
+
+    loose_pattern = re.compile(r"\b(narration|dialogue)\b\s*[:\-]\s*", re.IGNORECASE)
+    fragments = loose_pattern.split(text)
+    if len(fragments) >= 3:
+        cleaned = {fragments[i].lower(): fragments[i + 1].strip() for i in range(1, len(fragments), 2)}
+        return cleaned.get("narration", ""), cleaned.get("dialogue", "")
+
+    return "", text
 
 
 def hard_redirect_reply(npc_key: str, player_name: str) -> str:
@@ -178,7 +202,6 @@ class ChatUI(tk.Tk):
         self.send_btn = ttk.Button(bottom, text="Enviar", command=self.on_send)
         self.send_btn.grid(row=0, column=1, padx=(10, 0))
 
-        self.msg_counter = 1
         self._boot_intro()
 
         # Arranca el polling de resultados del hilo
@@ -208,12 +231,7 @@ class ChatUI(tk.Tk):
             return
         self.character_var.set(choice)
 
-    def _avatar_for(self, name: str, meta: dict | None = None) -> str:
-        if meta and meta.get("avatar"):
-            return meta["avatar"]
-        return name[:1].upper() if name else "?"
-
-    def _append(self, speaker: str, text: str, *, color: str = "", italic: bool = False, avatar: str | None = None):
+    def _append(self, speaker: str, text: str, *, color: str = "", italic: bool = False):
         fg = color or NEUTRAL_COLOR
         self.chat.configure(state="normal")
         safe_color = fg.replace("#", "") or "neutral"
@@ -226,11 +244,7 @@ class ChatUI(tk.Tk):
             font_style = ("TkDefaultFont", 10, "italic") if italic else ("TkDefaultFont", 10)
             self.chat.tag_configure(body_tag, foreground=fg, font=font_style, background=CHAT_BG)
 
-        ts = time.strftime("%H:%M:%S")
-        order = self.msg_counter
-        self.msg_counter += 1
-        avatar_txt = f"[{avatar}]" if avatar else ""
-        label = f"[{order:02d} | {ts}] {avatar_txt} {speaker}:".strip()
+        label = f"{speaker}:"
 
         self.chat.configure(state="normal")
         self.chat.insert("end", f"{label}\n", label_tag)
@@ -246,7 +260,6 @@ class ChatUI(tk.Tk):
             f"Tu nombre es {self._player_name()}. Elige con quien hablar y escribe tu primera frase.",
             color=NEUTRAL_COLOR,
             italic=True,
-            avatar="◆",
         )
 
     def on_new_game(self):
@@ -274,12 +287,12 @@ class ChatUI(tk.Tk):
             self.world_prompt = get_world_prompt()
             self._update_config_info()
             path = self.config_info.get("path") or "configuracion"
-            self._append("Sistema", f"Configuracion recargada desde {path}.", color=NEUTRAL_COLOR, avatar="⚙️")
+            self._append("Sistema", f"Configuracion recargada desde {path}.", color=NEUTRAL_COLOR)
         except PersonasConfigError as exc:
-            self._append("Sistema", f"Error al cargar configuracion: {exc}", color="#ef4444", avatar="⚠️")
+            self._append("Sistema", f"Error al cargar configuracion: {exc}", color="#ef4444")
         except Exception as exc:  # pragma: no cover - defensivo
             logging.exception("Fallo inesperado al recargar configuracion.")
-            self._append("Sistema", f"Error inesperado al recargar config: {exc}", color="#ef4444", avatar="⚠️")
+            self._append("Sistema", f"Error inesperado al recargar config: {exc}", color="#ef4444")
 
     def _set_busy(self, busy: bool):
         if busy:
@@ -326,15 +339,11 @@ class ChatUI(tk.Tk):
                 raw = self.llm.chat(messages, temperature=0.45, max_tokens=220, character=character_meta)
                 raw = (raw or "").strip()
 
-                # Parseo robusto: si no es JSON, lo tratamos como dialogo sin narracion
-                narration = ""
-                dialogue = raw
-                try:
-                    obj = json.loads(raw)
-                    narration = (obj.get("narration") or "").strip()
-                    dialogue = (obj.get("dialogue") or "").strip()
-                except Exception:
-                    pass
+                narration, dialogue = parse_llm_output(raw)
+                if not dialogue:
+                    dialogue = raw
+                if narration is None:
+                    narration = ""
 
                 # Guardrails contra inventos tipicos y terminos indeseados
                 forbidden = [
@@ -392,17 +401,15 @@ class ChatUI(tk.Tk):
                     self.session.add_assistant(npc_key, dialogue, character_key=character_key)
 
                     npc_color = NPCS.get(npc_key, {}).get("color", "")
-                    npc_avatar = NPCS.get(npc_key, {}).get("avatar")
-
                     if narration:
-                        self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True, avatar="◆")
-                    self._append(npc_name, dialogue, color=npc_color, avatar=npc_avatar)
+                        self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True)
+                    self._append(npc_name, dialogue, color=npc_color)
 
                     self._set_busy(False)
 
                 else:
                     _, npc_key, character_key, err = item
-                    self._append("Sistema", f"Error al llamar al LLM: {err}", color="#ef4444", avatar="⚠️")
+                    self._append("Sistema", f"Error al llamar al LLM: {err}", color="#ef4444")
                     self._set_busy(False)
 
         except queue.Empty:
@@ -436,8 +443,7 @@ class ChatUI(tk.Tk):
         for segment in segments:
             speaker = "Narrador" if segment["role"] == "narrator" else player_name
             color = NEUTRAL_COLOR if segment["role"] == "narrator" else self._player_color()
-            avatar = "◆" if segment["role"] == "narrator" else self._avatar_for(player_name, character_meta)
-            self._append(speaker, segment["text"], color=color, italic=segment["role"] == "narrator", avatar=avatar)
+            self._append(speaker, segment["text"], color=color, italic=segment["role"] == "narrator")
 
             history_role = "system" if segment["role"] == "narrator" else "user"
             self.session.add_user(npc_key, segment["text"], character_key=character_key, role=history_role)
@@ -446,15 +452,14 @@ class ChatUI(tk.Tk):
         if clamp_in_world(user_text):
             npc_meta = NPCS.get(npc_key, {})
             npc_color = npc_meta.get("color", "")
-            npc_avatar = npc_meta.get("avatar")
             narration = "Maela baja la voz y el murmullo de la sala tapa el resto." if npc_name == "Maela" \
                 else "Sable te mira un segundo, como midiendo si merece la pena seguir."
 
             reply = hard_redirect_reply(npc_key, player_name)
 
             # Narrador + PNJ
-            self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True, avatar="◆")
-            self._append(npc_name, reply, color=npc_color, avatar=npc_avatar)
+            self._append("Narrador", narration, color=NEUTRAL_COLOR, italic=True)
+            self._append(npc_name, reply, color=npc_color)
 
             # Guardamos SOLO el dialogo del PNJ (no la narracion)
             self.session.add_assistant(npc_key, reply, character_key=character_key)
