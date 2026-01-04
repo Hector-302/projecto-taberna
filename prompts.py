@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 import yaml
@@ -12,6 +13,10 @@ LOGGER = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 REQUIRED_FIELDS = ["descripcion", "objetivos", "limites_contenido", "estilo", "ejemplos"]
+
+
+class PersonasConfigError(Exception):
+    """Error al cargar la configuracion de personas."""
 
 DEFAULT_PERSONAS = {
     "Taberna": {
@@ -141,16 +146,42 @@ DEFAULT_PERSONAS = {
 }
 
 
-def _load_from_file(path: str) -> Dict[str, Any]:
+def _resolve_path(path: Optional[str]) -> str:
+    return path or os.getenv("PERSONAS_CONFIG_PATH", os.path.join("config", "personas.yaml"))
+
+
+def _build_config_info(path: str) -> Dict[str, Optional[str]]:
+    info: Dict[str, Optional[str]] = {
+        "name": os.path.basename(path) if path else None,
+        "path": os.path.abspath(path) if path else None,
+        "loaded_at": datetime.now().isoformat(timespec="seconds"),
+        "modified_at": None,
+    }
+
+    try:
+        info["modified_at"] = datetime.fromtimestamp(os.path.getmtime(path)).isoformat(timespec="seconds")
+    except OSError:
+        info["modified_at"] = None
+
+    return info
+
+
+def _load_from_file(path: str, *, strict: bool = False) -> Dict[str, Any]:
     if not os.path.exists(path):
-        LOGGER.warning("Archivo de configuracion de personas no encontrado en %s. Se usaran valores por defecto.", path)
+        msg = f"Archivo de configuracion de personas no encontrado en {path}."
+        if strict:
+            raise PersonasConfigError(msg)
+        LOGGER.warning("%s Se usaran valores por defecto.", msg)
         return {}
 
     try:
         with open(path, "r", encoding="utf-8") as fh:
             return yaml.safe_load(fh) or {}
     except Exception as exc:  # pragma: no cover - defensivo
-        LOGGER.warning("No se pudo cargar configuracion de %s: %s. Se usaran valores por defecto.", path, exc)
+        msg = f"No se pudo cargar configuracion de {path}: {exc}"
+        if strict:
+            raise PersonasConfigError(msg)
+        LOGGER.warning("%s. Se usaran valores por defecto.", msg)
         return {}
 
 
@@ -186,9 +217,9 @@ def _merge_persona(name: str, base: Dict[str, Any], override: Dict[str, Any]) ->
     return result
 
 
-def load_personas_config(path: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
-    path = path or os.getenv("PERSONAS_CONFIG_PATH", os.path.join("config", "personas.yaml"))
-    raw = _load_from_file(path)
+def load_personas_config(path: Optional[str] = None, *, strict: bool = False) -> Dict[str, Dict[str, Any]]:
+    resolved_path = _resolve_path(path)
+    raw = _load_from_file(resolved_path, strict=strict)
     personas_data = raw.get("personas", {}) if isinstance(raw, dict) else {}
 
     merged: Dict[str, Dict[str, Any]] = {}
@@ -246,7 +277,27 @@ def build_prompt(persona: Dict[str, Any]) -> str:
     return "\n".join([part for part in prompt_parts if part]).strip()
 
 
-PERSONA_CONFIG = load_personas_config()
+def reload_personas_config(path: Optional[str] = None, *, strict: bool = False) -> Dict[str, Dict[str, Any]]:
+    global PERSONA_CONFIG, PERSONA_CONFIG_INFO
+    personas = load_personas_config(path, strict=strict)
+    resolved_path = _resolve_path(path)
+    PERSONA_CONFIG = personas
+    PERSONA_CONFIG_INFO = _build_config_info(resolved_path)
+    return PERSONA_CONFIG
+
+
+def get_personas_config_info() -> Dict[str, Optional[str]]:
+    return dict(PERSONA_CONFIG_INFO)
+
+
+def _init_personas_config() -> tuple[Dict[str, Dict[str, Any]], Dict[str, Optional[str]]]:
+    resolved_path = _resolve_path(None)
+    personas = load_personas_config(resolved_path)
+    info = _build_config_info(resolved_path)
+    return personas, info
+
+
+PERSONA_CONFIG, PERSONA_CONFIG_INFO = _init_personas_config()
 
 
 def get_world_prompt() -> str:
