@@ -1,12 +1,14 @@
+import json
+import logging
+import queue
+import threading
+import time
 import tkinter as tk
 from tkinter import ttk
-import time
-import threading
-import queue
 
 from llm_client import LLMClient
+from prompts import PLAYER_NAME, TAVERN_NAME, get_persona_prompt, get_world_prompt, to_json_contract
 from session import Session
-from prompts import WORLD_SYSTEM_PROMPT, NPC_PROMPTS, PLAYER_NAME, TAVERN_NAME
 
 
 # IMPORTANTE: Las claves deben coincidir con NPC_PROMPTS
@@ -50,6 +52,7 @@ class ChatUI(tk.Tk):
         self.llm = LLMClient()
         self.session = Session(max_turns=12)
         self.result_q = queue.Queue()
+        self.world_prompt = get_world_prompt()
 
         self.started_at = time.strftime("%H:%M")
 
@@ -147,18 +150,17 @@ class ChatUI(tk.Tk):
                 )
 
                 # Reglas duras de formato: SOLO JSON con narration/dialogue
-                output_contract = (
-                    'Devuelve SOLO JSON valido con claves "narration" y "dialogue". '
-                    'Sin markdown. Sin texto extra. Sin prefijos tipo "Maela:". '
-                    '"narration" es una frase corta de narrador sobre acciones visibles en la taberna. '
-                    '"dialogue" es lo que dice el PNJ en texto plano.'
-                )
+                output_contract = to_json_contract()
+
+                npc_prompt = get_persona_prompt(npc_key)
+                if not npc_prompt:
+                    logging.warning("No hay prompt configurado para %s; se usara mensaje vacio.", npc_key)
 
                 messages = [
-                    {"role": "system", "content": WORLD_SYSTEM_PROMPT},
+                    {"role": "system", "content": self.world_prompt},
                     {"role": "system", "content": state_reminder},
                     {"role": "system", "content": output_contract},
-                    {"role": "system", "content": NPC_PROMPTS[npc_key]},
+                    {"role": "system", "content": npc_prompt},
                 ]
                 messages += self.session.get_messages(npc_key)
                 messages.append({"role": "user", "content": user_text})
