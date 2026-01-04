@@ -7,7 +7,15 @@ import tkinter as tk
 from tkinter import ttk
 
 from llm_client import LLMClient
-from prompts import TAVERN_NAME, get_persona_prompt, get_world_prompt, to_json_contract
+from prompts import (
+    TAVERN_NAME,
+    PersonasConfigError,
+    get_persona_prompt,
+    get_personas_config_info,
+    get_world_prompt,
+    reload_personas_config,
+    to_json_contract,
+)
 from session import Session
 
 
@@ -107,6 +115,7 @@ class ChatUI(tk.Tk):
         self.session = Session(max_turns=12, characters=CHARACTERS, active_character=default_character_key)
         self.result_q = queue.Queue()
         self.world_prompt = get_world_prompt()
+        self.config_info = get_personas_config_info()
 
         self.started_at = time.strftime("%H:%M")
 
@@ -116,7 +125,7 @@ class ChatUI(tk.Tk):
 
         top = ttk.Frame(self, padding=10)
         top.grid(row=0, column=0, sticky="ew")
-        top.columnconfigure(5, weight=1)
+        top.columnconfigure(6, weight=1)
 
         ttk.Label(top, text="Personaje:").grid(row=0, column=0, sticky="w")
         self.character_var = tk.StringVar(value=default_character_key)
@@ -134,9 +143,17 @@ class ChatUI(tk.Tk):
         self.new_btn = ttk.Button(top, text="Nuevo juego", command=self.on_new_game)
         self.new_btn.grid(row=0, column=4, sticky="w")
 
+        self.reload_btn = ttk.Button(top, text="Recargar config", command=self.on_reload_config)
+        self.reload_btn.grid(row=0, column=5, padx=(10, 0), sticky="w")
+
         self.status_var = tk.StringVar(value=f"Sesion {self.started_at} - {TAVERN_NAME}")
         self.status = ttk.Label(top, textvariable=self.status_var)
-        self.status.grid(row=0, column=5, sticky="e")
+        self.status.grid(row=0, column=6, sticky="e")
+
+        ttk.Label(top, text="Config:").grid(row=1, column=0, pady=(6, 0), sticky="w")
+        self.config_var = tk.StringVar(value=self._config_label())
+        self.config_label = ttk.Label(top, textvariable=self.config_var)
+        self.config_label.grid(row=1, column=1, columnspan=6, pady=(6, 0), sticky="w")
 
         mid = ttk.Frame(self, padding=(10, 0, 10, 10))
         mid.grid(row=1, column=0, sticky="nsew")
@@ -175,6 +192,13 @@ class ChatUI(tk.Tk):
 
     def _player_color(self) -> str:
         return self._active_character().get("color") or ""
+
+    def _config_label(self) -> str:
+        info = self.config_info or {}
+        name = info.get("name") or "desconocido"
+        modified = info.get("modified_at") or "sin fecha"
+        loaded = info.get("loaded_at") or "sin cargar"
+        return f"{name} (mod: {modified} | cargada: {loaded})"
 
     def on_character_change(self, choice: str):
         try:
@@ -240,14 +264,33 @@ class ChatUI(tk.Tk):
 
         self._boot_intro()
 
+    def _update_config_info(self):
+        self.config_info = get_personas_config_info()
+        self.config_var.set(self._config_label())
+
+    def on_reload_config(self):
+        try:
+            reload_personas_config(strict=True)
+            self.world_prompt = get_world_prompt()
+            self._update_config_info()
+            path = self.config_info.get("path") or "configuracion"
+            self._append("Sistema", f"Configuracion recargada desde {path}.", color=NEUTRAL_COLOR, avatar="⚙️")
+        except PersonasConfigError as exc:
+            self._append("Sistema", f"Error al cargar configuracion: {exc}", color="#ef4444", avatar="⚠️")
+        except Exception as exc:  # pragma: no cover - defensivo
+            logging.exception("Fallo inesperado al recargar configuracion.")
+            self._append("Sistema", f"Error inesperado al recargar config: {exc}", color="#ef4444", avatar="⚠️")
+
     def _set_busy(self, busy: bool):
         if busy:
             self.send_btn.configure(state="disabled")
             self.entry.configure(state="disabled")
+            self.reload_btn.configure(state="disabled")
             self.status_var.set(f"Sesion {self.started_at} - {TAVERN_NAME} - Consultando...")
         else:
             self.send_btn.configure(state="normal")
             self.entry.configure(state="normal")
+            self.reload_btn.configure(state="normal")
             self.status_var.set(f"Sesion {self.started_at} - {TAVERN_NAME}")
             self.entry.focus_set()
 
