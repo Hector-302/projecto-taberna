@@ -1,1 +1,1 @@
-# proyect-taberna
+# projecto-taberna
