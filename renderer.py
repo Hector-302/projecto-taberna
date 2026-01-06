@@ -1,7 +1,8 @@
 import re
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import tkinter as tk
+from tkinter import font as tkfont
 
 
 class CharacterColors:
@@ -12,7 +13,7 @@ class CharacterColors:
     def get(self, name: str) -> str:
         name = (name or "").strip()
         if not name:
-            return "#e5e7eb"
+            return "#e6e8ee"
         if name in self.map:
             return self.map[name]
         color = self.palette[len(self.map) % len(self.palette)]
@@ -21,20 +22,69 @@ class CharacterColors:
 
 
 class ChatRenderer:
-    def __init__(self, text_widget: tk.Text, character_colors: CharacterColors):
+    def __init__(
+        self,
+        text_widget: tk.Text,
+        character_colors: CharacterColors,
+        *,
+        base_font: Optional[tkfont.Font] = None,
+    ):
         self.chat = text_widget
         self.colors = character_colors
 
-    def _ensure_tags(self, speaker: str, speaker_color: str, body_color: str, italic: bool) -> Tuple[str, str]:
-        speaker_key = (speaker or "anon").replace(" ", "-")
-        speaker_tag = f"speaker-{speaker_key}-{speaker_color.replace('#', '')}"
-        if speaker_tag not in self.chat.tag_names():
-            self.chat.tag_configure(speaker_tag, foreground=speaker_color, font=("TkDefaultFont", 10, "bold"))
+        # Fuente base: si no se pasa, se toma la del widget
+        self.base_font = base_font or tkfont.nametofont(self.chat.cget("font"))
 
-        body_font = ("TkDefaultFont", 10, "italic") if italic else ("TkDefaultFont", 10, "normal")
+        # Fuentes derivadas (se actualizan cuando cambie el tamaño)
+        self.body_font = self.base_font.copy()
+        self.body_font.configure(weight="normal", slant="roman")
+
+        self.body_italic_font = self.base_font.copy()
+        self.body_italic_font.configure(weight="normal", slant="italic")
+
+        self.speaker_font = self.base_font.copy()
+        self.speaker_font.configure(weight="bold", slant="roman")
+
+        self._font_size = int(self.base_font.cget("size"))
+
+    def set_font_size(self, size: int):
+        # Ajusta tamaño de fuentes usadas por todos los tags
+        size = int(size)
+        if size == self._font_size:
+            return
+        self._font_size = size
+
+        self.base_font.configure(size=size)
+        self.body_font.configure(size=size)
+        self.body_italic_font.configure(size=size)
+        self.speaker_font.configure(size=size)
+
+    def _ensure_tags(
+        self,
+        speaker: str,
+        speaker_color: str,
+        body_color: str,
+        italic: bool,
+    ) -> Tuple[str, str]:
+        speaker_key = (speaker or "anon").replace(" ", "-")
+        speaker_tag = f"speaker-{speaker_key}"
+        if speaker_tag not in self.chat.tag_names():
+            self.chat.tag_configure(
+                speaker_tag,
+                foreground=speaker_color,
+                font=self.speaker_font,
+            )
+        else:
+            # Por si el color cambiara (raro, pero evita inconsistencias)
+            self.chat.tag_configure(speaker_tag, foreground=speaker_color)
+
         body_tag = f"body-{body_color.replace('#', '')}-{'i' if italic else 'n'}"
         if body_tag not in self.chat.tag_names():
-            self.chat.tag_configure(body_tag, foreground=body_color, font=body_font)
+            self.chat.tag_configure(
+                body_tag,
+                foreground=body_color,
+                font=self.body_italic_font if italic else self.body_font,
+            )
 
         return speaker_tag, body_tag
 
@@ -55,8 +105,8 @@ class ChatRenderer:
         speaker: str,
         text: str,
         *,
-        speaker_color: str = "#e5e7eb",
-        body_color: str = "#e5e7eb",
+        speaker_color: str = "#e6e8ee",
+        body_color: str = "#e6e8ee",
         italic: bool = False,
         show_speaker: bool = True,
         italicize_asterisks: bool = False,
@@ -82,8 +132,8 @@ class ChatRenderer:
         self.append(
             "Usuario",
             user_text,
-            speaker_color="#1f6feb",
-            body_color="#e5e7eb",
+            speaker_color="#7aa2f7",
+            body_color="#e6e8ee",
             italic=False,
             italicize_asterisks=True,
         )
@@ -91,7 +141,13 @@ class ChatRenderer:
     def append_narration(self, narration: str):
         narration = (narration or "").strip()
         if narration:
-            self.append("Narrador", narration, speaker_color="#9ca3af", body_color="#9ca3af", italic=True)
+            self.append(
+                "Narrador",
+                narration,
+                speaker_color="#b7beca",
+                body_color="#b7beca",
+                italic=True,
+            )
 
     def append_character(self, name: str, dialog: str):
         name = (name or "").strip() or "Personaje"
@@ -115,7 +171,7 @@ class ChatRenderer:
         self.append("", lines, speaker_color="#a78bfa", body_color="#a78bfa", italic=False, show_speaker=False)
 
     def append_raw_ai(self, raw: str):
-        self.append("IA", raw.strip(), speaker_color="#f59e0b", body_color="#e5e7eb")
+        self.append("IA", raw.strip(), speaker_color="#f59e0b", body_color="#e6e8ee")
 
     def append_error(self, err: str):
         self.append("Error", err, speaker_color="#ef4444", body_color="#ef4444")

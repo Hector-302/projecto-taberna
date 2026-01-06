@@ -123,3 +123,154 @@ Miras hacia el fondo de la taberna y ves a un hombre recio, de unos 45 anos, con
 Aida sigue tu mirada y te observa con curiosidad.
 
 - Ese de alla es Sable. Un cliente habitual. Pero no se que tiene que ver contigo. A no ser que quieras algo de el. - dice con un tono sugerente. - Por 10 monedas de cobre puedo presentarte. Si quieres.
+
+----- 2026-01-06 12:09:26 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Entro en la taberna La Jabalina Rampante, empapado por la lluvia. El olor a cerveza y a humo de leña me recibió." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Bienvenido viajero. ¿Que te trae por aquí con este tiempo?" }
+  ],
+  "opciones": [
+    "Contar que busco información sobre el Comandante en Jefe Kali.",
+    "Pedir una bebida caliente y observar discretamente a los presentes.",
+    "Solicitar una presentación con Sable a cambio de 10 monedas de cobre.",
+    "Intentar ganarme la confianza de Aida con una historia convincente."
+  ]
+}
+
+----- 2026-01-06 12:11:40 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "El sonido de tus pasos resuena en el pasillo de la taberna. Aida levanta la mirada del mostrador donde estaba secando copas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Ah, hola. Que se te ofrece? No te conozco." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-06 12:13:55 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Empujas la puerta y una rafaga de aire humedo mete el olor de la lluvia en la taberna. El suelo de tablas cruje bajo tus botas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero?" },
+    { "tipo": "narracion", "texto": "Al fondo, Sable no levanta la cabeza, pero su mano se queda un segundo quieta sobre la jarra." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-06 12:52:59 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Eres un desconocido que ha entrado empapado en la taberna La Jabalina Rampante. El olor a alcohol, humo y sudor se mezcla con el tuyo. La tarde ha caido y las calles, ahora oscuras, gotean. Al fondo, un hombre mayor, con el pelo gris y barba descuidada, bebe solo. Es Sable, ex-mercenario, que lleva años sin hablar con nadie. A su lado, Aida, la tabernera, te mira con desconfianza." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-06 12:53:28 -----
+USER: buenas quiero una bebida
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Empujas la puerta y una rafaga de aire humedo mete el olor de la lluvia en la taberna. El suelo de tablas cruje bajo tus botas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero?" },
+    { "tipo": "narracion", "texto": "Al fondo, Sable no levanta la cabeza, pero su mano se queda un segundo quieta sobre la jarra." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-06 12:54:27 -----
+USER: *me quito las botas y las pongo al lado de la puerta* puedes darme un caldo caliente, estoy helado
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Te acercas a la barra, dejando un rastro de pisadas húmedas sobre el suelo de tablones. Aida te mira de arriba a abajo, evaluándote." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Bien, al menos te has quitado las botas. Aquí tienes tu caldo. Pero no te quedes ahí parado, siéntate a una mesa." },
+    { "tipo": "narracion", "texto": "Sable sigue con la vista fija en su bebida, pero un ligero movimiento de sus hombros sugiere que está alerta a todo lo que ocurre a su alrededor." }
+  ],
+  "opciones": [
+    "Sentarte junto a Sable y preguntarle directamente sobre el Comandante en Jefe Kali.",
+    "Pedir a Aida que te presente a Sable discretamente y ofrecer las 10 monedas de cobre.",
+    "Sentarte en una mesa y esperar a que Sable se acerque a ti por curiosidad.",
+    "Contarle a Aida que tienes una historia interesante que podría interesar a Sable y ganarte su confianza para que interceda."
+  ]
+}
+
+----- 2026-01-06 12:55:12 -----
+USER: Estoy buscando a un tal sable, le conoces?
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "El sonido de la puerta al abrirse hace que varias cabezas se giren hacia ti. La taberna es un lugar oscuro y humedo, con mesas de madera y bancos desparejos. El ambiente esta cargado por el humo de las velas y el olor a alcohol y sudor. En un rincón, un hombre de edad madura alza la mirada, entornando los ojos para ver mejor tu figura empapada." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Aida, la tabernera, te mira de arriba a abajo con suspicacia. Su rostro es duro y en su mano derecha tiene un palo grueso, probablemente para amedrentar a los borrachos problemáticos." },
+    { "tipo": "dialogo", "nombre": "Sable", "texto": "Sable, el hombre del rincón, no dice nada. Solo te mira fijamente, como si estuviera evaluando si eres una amenaza o no. Su mirada es penetrante, casi desafiante." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas información.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentación.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-06 12:59:18 -----
+USER: hola
+PARSE_OK: False
+FORMAT_OK: False
+ERROR: JSONDecodeError: Expecting ',' delimiter: line 11 column 5 (char 357)
+RAW:
+{
+  "eventos": [
+    "El sonido de las gotas de lluvia golpea contra las ventanas empapadas y el polvo levantado en las calles mojadas."
+  ],
+  "dialogo": {
+    "nombre": "Aida",
+    "texto": "Buscando aventuras o alquilando un cuarto este no es parte de ello"
+  },
+  "opciones": [
+    "Preguntar si tiene información sobre el Comandante en Jefe Kali."
+    "Intimarla un poco esperando que se relaje."
+    "Ofrecerle las monedas y pedirle un acercamiento."
+    "Explicar cómo podría ser de ayuda en algún pequeño cambio."
+  ]
+}
