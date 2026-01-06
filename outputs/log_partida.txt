@@ -1,0 +1,125 @@
+
+----- 2026-01-05 19:07:40 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Empujas la puerta y una rafaga de aire humedo mete el olor de la lluvia en la taberna. El suelo de tablas cruje bajo tus botas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero?" },
+    { "tipo": "narracion", "texto": "Al fondo, Sable no levanta la cabeza, pero su mano se queda un segundo quieta sobre la jarra." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-05 19:08:53 -----
+USER: quiero una bebida caliente porfavor * procedo a quitarme las botas y dejarlas junto a la apuerta y me acerco a la barra*
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "El calor de la chimenea te envuelve al acercarte al mostrador. Aida, la tabernera, te mira de arriba abajo con ojos escrutadores." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Vaya, que mojado has llegado. No es una tarde para estar de paseo. ¿Qué se te ofrece, viajero?" },
+    { "tipo": "narracion", "texto": "Sable sigue sin levantar la vista, pero su postura parece tensarse ligeramente, como si estuviera atento a vuestras palabras." }
+  ],
+  "opciones": [
+    "Pedir un cuenco de gachas calientes para entrar en calor.",
+    "Iniciar una conversación casual con Aida sobre el tiempo.",
+    "Comentar de forma discreta que buscas información sobre el Comandante en Jefe Kali.",
+    "Sentarte en una mesa cercana y esperar a que Sable se acerque, si lo hace."
+  ]
+}
+
+----- 2026-01-05 19:09:48 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "La lluvia repiquetea contra los cristales de La Jabalina Rampante. Fuera, las calles brillan con el reflejo de los faroles. El calor y los olores de la cocina se mezclan con el humo de las pipas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa, viajero. Tienes pinta de haber pillado una buena ducha. Te traigo enseguida un trago caliente." }
+  ],
+  "opciones": [
+    "Aceptar la bebida y preguntar a Aida si conoce al hombre del fondo.",
+    "Rechazar la bebida y salir a seguir buscando.",
+    "Pedir a Aida que te presente al hombre del fondo.",
+    "Preguntar a Aida si hay habitaciones disponibles."
+  ]
+}
+
+----- 2026-01-05 19:14:37 -----
+USER: hola
+PARSE_OK: False
+FORMAT_OK: False
+ERROR: JSONDecodeError: Expecting ',' delimiter: line 3 column 95 (char 111)
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "La lluvia tamborilea contra los cristales de la taberna "La Jabalina Rampante". El ruido se mezcla con el murmullo de las conversaciones y el crepitar del fuego en la chimenea. El aire huele a cerveza, humedad y madera vieja. Un grupo de hombres bebe en una mesa y otro juega a las cartas en el fondo. En la barra, una mujer con un delantal de cuero negro sirve jarras de cerveza. Sus ojos oscuros te escrutan al entrar." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Otro mas que viene de la calle como un perro ahogado. Que se te ofrece, viajero?" }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+----- 2026-01-05 19:16:49 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Empujas la puerta y una rafaga de aire humedo mete el olor de la lluvia en la taberna. El suelo de tablas cruje bajo tus botas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero?" },
+    { "tipo": "narracion", "texto": "Al fondo, Sable no levanta la cabeza, pero su mano se queda un segundo quieta sobre la jarra." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creble y concreta."
+  ]
+}
+
+----- 2026-01-05 19:25:47 -----
+USER: hola
+PARSE_OK: True
+FORMAT_OK: True
+RAW:
+ {
+  "eventos": [
+    { "tipo": "narracion", "texto": "Empujas la puerta y una rafaga de aire humedo mete el olor de la lluvia en la taberna. El suelo de tablas cruje bajo tus botas." },
+    { "tipo": "dialogo", "nombre": "Aida", "texto": "Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero?" },
+    { "tipo": "narracion", "texto": "Al fondo, Sable no levanta la cabeza, pero su mano se queda un segundo quieta sobre la jarra." }
+  ],
+  "opciones": [
+    "Pedir una bebida caliente y mencionar con cuidado que buscas informacion.",
+    "Preguntar por el hombre del fondo como si fuera simple curiosidad.",
+    "Ofrecer 10 monedas de cobre y pedir una presentacion.",
+    "Ganarte a Aida con una historia creible y concreta."
+  ]
+}
+
+La puerta de madera cruje al abrirse. Una rafaga de aire fresco y humedo mete el olor de la lluvia en la taberna "La Jabalina Rampante". El suelo de tablas cruje bajo tus botas. En el ambiente hay humo de chimeneas y velas, y se oye el rumor de conversaciones.
+
+Detras de la barra esta Aida, la tabernera. Es una mujer de unos 35 anos, con el pelo recogido en un moño y un delantal sobre el vestido. Tiene un rostro duro y unos ojos avispados que te miran con desconfianza.
+
+- Pasa. Pero no me encharques el suelo mas de la cuenta. Que quieres, viajero? - pregunta con un tono seco.
+
+Miras hacia el fondo de la taberna y ves a un hombre recio, de unos 45 anos, con la mirada perdida en una jarra de cerveza. Parece un mercenario retirado, cansado y resentido. Se llama Sable y, segun sabes, tiene informacion sobre el Comandante en Jefe Kali. Pero no habla del tema con desconocidos.
+
+Aida sigue tu mirada y te observa con curiosidad.
+
+- Ese de alla es Sable. Un cliente habitual. Pero no se que tiene que ver contigo. A no ser que quieras algo de el. - dice con un tono sugerente. - Por 10 monedas de cobre puedo presentarte. Si quieres.
